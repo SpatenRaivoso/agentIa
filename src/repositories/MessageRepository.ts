@@ -5,6 +5,7 @@ interface CreateMessageDTO {
   content: string;
   sector?: string | null;
   summary?: string | null;
+  conversationId: string;
 }
 
 export class MessageRepository {
@@ -13,11 +14,26 @@ export class MessageRepository {
 
     await db.run(
       `
-      INSERT INTO messages (role, content, sector, summary)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO messages (conversation_id, role, content, sector, summary)
+      VALUES (?, ?, ?, ?, ?)
       `,
-      [data.role, data.content, data.sector ?? null, data.summary ?? null]
+      [data.conversationId, data.role, data.content, data.sector ?? null, data.summary ?? null]
     );
+  }
+
+  async findByConversationId(conversationId: string) {
+    const db = await databaseConnection;
+
+    const messages = await db.all(
+      `
+      SELECT * FROM messages
+      WHERE conversation_id = ?
+      ORDER BY created_at ASC
+      `,
+      [conversationId]
+    );
+
+    return messages;
   }
 
   async findAll() {

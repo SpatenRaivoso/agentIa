@@ -10,30 +10,46 @@ export default class MessageService {
     this.messageRepository = new MessageRepository();
   }
 
-  async handleUserMessage(content: string): Promise<AgentResponse> {
-    // 1️⃣ Salva mensagem do usuário
+  async handleUserMessage(content: string, conversationId: string): Promise<AgentResponse> {
     await this.messageRepository.create({
       role: "USER",
       content,
       sector: null,
-      summary: null
+      summary: null,
+      conversationId
     });
 
-    // 2️⃣ Processa IA
-    const agentResponse = await this.agentService.processMessage(content);
+    // Obter o setor atual da conversa
+    const messages = await this.messageRepository.findByConversationId(conversationId);
+    const lastAgentMessage = messages.filter(m => m.role === 'AGENT' && m.sector).pop();
+    const currentSector = lastAgentMessage ? lastAgentMessage.sector : null;
 
-    // 3️⃣ Salva resposta do agente
+    const agentResponse = await this.agentService.processMessage(content, currentSector);
+
     await this.messageRepository.create({
       role: "AGENT",
       content: agentResponse.reply,
       sector: agentResponse.sector ?? null,
-      summary: agentResponse.summary ?? null
+      summary: agentResponse.summary ?? null,
+      conversationId
     });
 
     return agentResponse;
   }
 
   async getHistory() {
-    return this.messageRepository.findAll();
+    const messages = await this.messageRepository.findAll();
+    const conversations: { [key: string]: any[] } = {};
+
+    messages.forEach(msg => {
+      if (msg.conversation_id) {
+        if (!conversations[msg.conversation_id]) {
+          conversations[msg.conversation_id] = [];
+        }
+        conversations[msg.conversation_id]!.push(msg);
+      }
+    });
+
+    return Object.values(conversations);
   }
 }

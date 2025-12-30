@@ -1,5 +1,10 @@
+import axios from 'axios';
+import fs from 'fs/promises';
+import path from 'path';
+
 type Sector = "VENDAS" | "SUPORTE" | "FINANCEIRO";
 
+// Tipagem da resposta do agente
 export interface AgentResponse {
   sector: Sector | null;
   reply: string;
@@ -8,77 +13,94 @@ export interface AgentResponse {
 }
 
 export class AgentService {
-  async processMessage(message: string): Promise<AgentResponse> {
-    const lower = message.toLowerCase();
+  private ollamaUrl: string;
+  private instructions: any;
 
-    if (this.isOutOfContext(lower)) {
+  constructor() {
+    this.ollamaUrl = 'http://localhost:11434/api/generate';
+    this.loadInstructions();
+  }
+
+  private async loadInstructions() {
+    try {
+      const filePath = path.join(process.cwd(), 'src/services/botInstructions.json');
+      const data = await fs.readFile(filePath, 'utf-8');
+      this.instructions = JSON.parse(data);
+    } catch (error) {
+      console.error('Erro ao carregar instruções:', error);
+      this.instructions = {};
+    }
+  }
+
+  async processMessage(message: string, currentSector: Sector | null = null): Promise<AgentResponse> {
+    if (currentSector) {
+      const sectorKey = currentSector.toLowerCase();
+      const reply = await this.generateReply(sectorKey, `O usuário disse: "${message}". Responda de forma apropriada para o setor ${currentSector}, mantendo o tom e oferecendo ajuda.`);
       return {
-        sector: null,
+        sector: currentSector,
         transfer: false,
-        reply:
-          "Sinto muito, mas não tenho autorização para falar sobre esse assunto. Posso ajudar com vendas, suporte ou financeiro."
+        reply
       };
     }
 
-    if (this.isFinance(lower)) {
-      return {
-        sector: "FINANCEIRO",
-        transfer: true,
-        reply:
-          "Entendi sua solicitação. Vou te transferir para o setor Financeiro para te ajudar melhor.",
-        summary: "Cliente entrou em contato sobre pagamento/boleto."
-      };
-    }
+    const lower = message.toLowerCase().trim();
 
-    if (this.isSupport(lower)) {
-      return {
-        sector: "SUPORTE",
-        transfer: true,
-        reply:
-          "Sinto muito pelo transtorno. Vou te transferir para o Suporte para resolvermos isso rapidamente.",
-        summary: "Cliente relatou problema ou erro no serviço."
-      };
-    }
-
-    if (this.isSales(lower)) {
+    if (lower === "1" || lower === "vendas") {
+      const reply = await this.generateReply("vendas", "O usuário escolheu vendas. Responda de forma entusiasmada e motivadora, oferecendo opções e terminando com a transferência personalizada.");
       return {
         sector: "VENDAS",
         transfer: true,
-        reply:
-          "Perfeito! Vou te encaminhar para nosso time de Vendas para te ajudar com essa solicitação.",
-        summary: "Cliente demonstrou interesse em compra ou negociação."
+        reply,
+        summary: "Cliente escolheu o setor de Vendas."
       };
     }
 
+    if (lower === "2" || lower === "suporte") {
+      const reply = await this.generateReply("suporte", "O usuário escolheu suporte. Responda de forma empática e solidária, oferecendo ajuda e terminando com a transferência personalizada.");
+      return {
+        sector: "SUPORTE",
+        transfer: true,
+        reply,
+        summary: "Cliente escolheu o setor de Suporte."
+      };
+    }
+
+    if (lower === "3" || lower === "financeiro") {
+      const reply = await this.generateReply("financeiro", "O usuário escolheu financeiro. Responda de forma prestativa, explicando brevemente e terminando com a transferência personalizada.");
+      return {
+        sector: "FINANCEIRO",
+        transfer: true,
+        reply,
+        summary: "Cliente escolheu o setor Financeiro."
+      };
+    }
+
+    const reply = "Olá! Em que setor posso te ajudar? Responda com: 1 para Vendas, 2 para Suporte, 3 para Financeiro.";
     return {
       sector: null,
       transfer: false,
-      reply:
-        "Pode me explicar um pouco melhor como posso te ajudar? É sobre vendas, suporte ou financeiro?"
+      reply
     };
   }
 
-  private isFinance(text: string) {
-    return ["boleto", "pagamento", "pagar", "estorno", "nota fiscal"].some(
-      word => text.includes(word)
-    );
-  }
-
-  private isSupport(text: string) {
-    return ["erro", "problema", "atraso", "bloqueado", "reclamação"].some(
-      word => text.includes(word)
-    );
-  }
-
-  private isSales(text: string) {
-    return ["comprar", "preço", "desconto", "parcelar", "negociar"].some(
-      word => text.includes(word)
-    );
-  }
-
-  private isOutOfContext(text: string) {
-    return ["clima", "tempo", "futebol", "política", "notícia"].some(
-      word => text.includes(word)
-    );
+  private async generateReply(sector: string, userPrompt: string): Promise<string> {
+    try {
+      const systemPrompt = this.instructions[sector] || "Você é um assistente útil.";
+      const fullPrompt = `${systemPrompt}\n\n${userPrompt} Responda de forma concisa, em até 30 palavras.`;
+      const response = await axios.post(this.ollamaUrl, {
+        model: 'llama3.2',
+        prompt: fullPrompt,
+        stream: false
+      });
+      let reply = response.data.response.trim();
+      const words = reply.split(' ');
+      if (words.length > 50) {
+        reply = words.slice(0, 50).join(' ') + '...';
+      }
+      return reply;
+    } catch (error) {
+      console.error('Erro ao gerar resposta com Ollama:', error);
+      return "Desculpe, houve um erro. Tente novamente.";
+    }
   }
 }
