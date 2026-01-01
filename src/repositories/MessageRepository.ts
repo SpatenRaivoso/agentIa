@@ -38,7 +38,6 @@ export class MessageRepository {
 
   async findAll() {
     const db = await databaseConnection;
-
     const messages = await db.all(`
       SELECT * FROM messages
       ORDER BY created_at ASC

@@ -1,16 +1,8 @@
 import axios from 'axios';
 import fs from 'fs/promises';
 import path from 'path';
+import type { AgentResponse, Sector } from '../int/Allinterface.js';
 
-type Sector = "VENDAS" | "SUPORTE" | "FINANCEIRO";
-
-// Tipagem da resposta do agente
-export interface AgentResponse {
-  sector: Sector | null;
-  reply: string;
-  summary?: string;
-  transfer: boolean;
-}
 
 export class AgentService {
   private ollamaUrl: string;
@@ -21,6 +13,8 @@ export class AgentService {
     this.loadInstructions();
   }
 
+
+  // Função para carregar as instruções do bot a partir do arquivo JSON
   private async loadInstructions() {
     try {
       const filePath = path.join(process.cwd(), 'src/services/botInstructions.json');

@@ -1,5 +1,6 @@
+import type { AgentResponse } from "../int/Allinterface.js";
 import { MessageRepository } from "../repositories/MessageRepository.js";
-import { AgentService, type AgentResponse } from "./AgentService.js";
+import { AgentService } from "./AgentService.js";
 
 export default class MessageService {
   private agentService: AgentService;
@@ -19,7 +20,6 @@ export default class MessageService {
       conversationId
     });
 
-    // Obter o setor atual da conversa
     const messages = await this.messageRepository.findByConversationId(conversationId);
     const lastAgentMessage = messages.filter(m => m.role === 'AGENT' && m.sector).pop();
     const currentSector = lastAgentMessage ? lastAgentMessage.sector : null;

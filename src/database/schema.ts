@@ -15,10 +15,8 @@ export async function createTables() {
     );
   `);
 
-  // Add conversation_id column if it doesn't exist
   try {
     await db.exec(`ALTER TABLE messages ADD COLUMN conversation_id TEXT;`);
   } catch (error) {
-    // Column might already exist, ignore
   }
 }
