@@ -33,11 +33,13 @@ O servidor iniciará na porta 3000.
 
 ```
 back-end-teste/
+├── .env                            # Variáveis de ambiente (chave OpenAI)
+├── database.sqlite                 # Banco de dados SQLite
 ├── src/
 │   ├── controllers/
 │   │   └── MessageController.ts    # Controla as requisições de mensagens
 │   ├── services/
-│   │   ├── AgentService.ts         # Lógica do agente IA
+│   │   ├── AgentService.ts         # Lógica do agente IA com OpenAI
 │   │   ├── MessageService.ts       # Serviço de mensagens
 │   │   └── botInstructions.json    # Instruções personalizadas para o bot
 │   ├── repositories/
@@ -45,9 +47,18 @@ back-end-teste/
 │   ├── database/
 │   │   ├── connection.ts           # Conexão com SQLite
 │   │   └── schema.ts               # Criação das tabelas
-│   └── routes/
-│       └── message.routes.ts       # Definição das rotas
+│   ├── routes/
+│   │   └── message.routes.ts       # Definição das rotas
+│   └── int/
+│       └── Allinterface.tsx        # Interfaces TypeScript
+├── tests/
+│   └── MessageService.test.ts      # Testes unitários
 ├── app.ts                          # Configuração do Express
+├── server.ts                       # Inicialização do servidor
+├── package.json                    # Dependências e scripts
+├── tsconfig.json                   # Configuração TypeScript
+└── README.md                       # Este arquivo
+```
 ├── server.ts                       # Inicialização do servidor
 ├── package.json                    # Dependências e scripts
 └── README.md                       # Este arquivo
