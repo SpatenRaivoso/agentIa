@@ -4,6 +4,8 @@
 
 Este é o back-end de um sistema de chat inteligente com integração de IA local. Utiliza o Ollama com o modelo Llama 3.2 para processar mensagens dos usuários, classificá-las em setores (Vendas, Suporte, Financeiro) e gerar respostas amigáveis e personalizadas. As conversas são armazenadas em um banco SQLite e agrupadas por sessão.
 
+-- Front do bot -> [https://github.com/SpatenRaivoso/interface-Agent](https://github.com/SpatenRaivoso/interface-Agent)
+
 ## Tecnologias Utilizadas
 
 - **Node.js**: Ambiente de execução JavaScript.
